@@ -1,18 +1,42 @@
 import pygame
 from pygame.locals import *
 import time
+from random import randint
 
-class Player:
+class Apple:
+    x = 0
+    y = 0
+    def newCoord(self):
+        self.x = randint(0,self.windowWidth-self.blockSize)
+        self.y = randint(0,self.windowHeight-self.blockSize)
+        if(divmod(self.x,self.blockSize)[1]>0):
+            print(self.x)
+            self.x -= (divmod(self.x,self.blockSize)[1])
 
-    x = 400-16
-    y = 300-16
-    speed = 10
-    isDead = False
+        if(divmod(self.y,self.blockSize)[1]>0):
+            self.y -= (divmod(self.y,self.blockSize)[1])
+
     def __init__(self,w,h,b):
         self.windowWidth = w
         self.windowHeight = h
         self.blockSize = b
-        self.speed=self.blockSize
+        self.newCoord()
+
+
+class Player:
+
+    x = 0
+    y = 0
+    speed = 0
+    isDead = False
+    score = 0
+    def __init__(self,w,h,b):
+        self.windowWidth = w
+        self.windowHeight = h
+        self.blockSize = b
+        self.x = w/2 - b/2
+        self.y = h/2 - b/2
+        self.speed=b
 
 
     def moveRight(self):
@@ -43,17 +67,21 @@ class Player:
 
 class App:
 
-    windowWidth = 800
-    windowHeight = 600
-    blockSize = 32
+    windowWidth = 816
+    windowHeight = 624
+    blockSize = 16
     player = 0
     direction = 0
+    apple = 0
     gameOver = False
     def __init__(self):
         self._running = True
         self._display = None
         self._image = None
+        self._food = None
         self.player = Player(self.windowWidth,self.windowHeight,self.blockSize) 
+        self.apple = Apple(self.windowWidth,self.windowHeight,self.blockSize)
+        self.t = time.time()
 
     def on_init(self):
         pygame.init()
@@ -61,12 +89,13 @@ class App:
         
         pygame.display.set_caption('Snake game')
         self._running = True
-        self._image = pygame.image.load("snake.jpeg").convert()
- 
+        self._image = pygame.image.load("snake_16.jpeg").convert()
+        self._food = pygame.image.load("apple_16.jpeg").convert()
     
     def on_render(self):
         self._display.fill((0,0,0))
         self._display.blit(self._image,(self.player.x,self.player.y))
+        self._display.blit(self._food,(self.apple.x,self.apple.y))
         pygame.display.update()
  
     def on_cleanup(self):
@@ -80,7 +109,10 @@ class App:
             keys = pygame.key.get_pressed() 
             
             if (keys[K_RIGHT]):
-                self.direction=2
+                if(self.direction!=2):
+                    self.direction=2
+                    # self.player.x+=self.blockSize - divmod(self.player.x,self.blockSize)[1]
+                    # self.player.y+=self.blockSize - divmod(self.player.y,self.blockSize)[1]
 
             if (keys[K_LEFT]):
                 self.direction=4
@@ -116,7 +148,19 @@ class App:
                     print("Game Over")
                     self.gameOver=True
 
-                time.sleep(0.175)
+                time.sleep(0.125)
+
+
+            if (self.player.x == self.apple.x and self.player.y == self.apple.y):
+                self.apple.newCoord()
+                self.player.score += 1
+            sec = divmod(time.time()-self.t,1)[0]
+            min_cap = divmod(sec,60)[0]
+            sec_cap = divmod(sec,60)[1]
+            if (not self.player.isDead):
+                caption = "SNAKE: " + "Съедено яблок: " \
+                + str(self.player.score) + " | " + "Время: " + str(min_cap)[:-2] + "m " + str(sec_cap)[:-2] + "s"
+                pygame.display.set_caption(caption)
 
 
             self.on_render()
