@@ -2,7 +2,17 @@ import pygame
 from pygame.locals import *
 import time
 from random import randint
-
+'''
+TODO:
+Меню:
+    Скоростные сложности
+    Локации
+    Рекорды
+    Выход
+Идентифкация игрока после смерти змейки
+Видимые барьеры
+Новые картинки
+'''
 class Apple:
     x = 0
     y = 0
@@ -10,7 +20,6 @@ class Apple:
         self.x = randint(0,self.windowWidth-self.blockSize)
         self.y = randint(0,self.windowHeight-self.blockSize)
         if(divmod(self.x,self.blockSize)[1]>0):
-            print(self.x)
             self.x -= (divmod(self.x,self.blockSize)[1])
 
         if(divmod(self.y,self.blockSize)[1]>0):
@@ -25,43 +34,71 @@ class Apple:
 
 class Player:
 
-    x = 0
-    y = 0
+    x = [0]
+    y = [0]
     speed = 0
     isDead = False
     score = 0
+    size = 3
     def __init__(self,w,h,b):
         self.windowWidth = w
         self.windowHeight = h
         self.blockSize = b
-        self.x = w/2 - b/2
-        self.y = h/2 - b/2
+        self.x=[0]*self.size
+        self.y=[0]*self.size
+        # print(x)
+        for i in range(self.size): 
+            self.x[i] = w/2 - b/2 -self.blockSize * i
+            self.y[i] = h/2 - b/2
         self.speed=b
 
 
     def moveRight(self):
-        self.x = self.x + self.speed
-        if (self.x>self.windowWidth-self.blockSize):
+        for i in range(self.size-1,0,-1):
+            self.x[i] = self.x[i-1]
+            self.y[i] = self.y[i-1]
+        self.x[0] = self.x[0] + self.speed
+        if (self.x[0]>self.windowWidth-self.blockSize):
             self.isDead=True
-        
+        for i in range(self.size-1,0,-1):
+            if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
+                self.isDead=True
 
 
 
     def moveLeft(self):
-        self.x = self.x - self.speed
-        if (self.x<0):
+        for i in range(self.size-1,0,-1):
+            self.x[i] = self.x[i-1]
+            self.y[i] = self.y[i-1]
+        self.x[0] = self.x[0] - self.speed
+        if (self.x[0]<0):
             self.isDead=True
+        for i in range(self.size-1,0,-1):
+            if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
+                self.isDead=True
 
     def moveDown(self):
-        self.y = self.y + self.speed 
-        if (self.y>self.windowHeight-self.blockSize):
+        for i in range(self.size-1,0,-1):
+            self.y[i] = self.y[i-1]
+            self.x[i] = self.x[i-1]
+        self.y[0] = self.y[0] + self.speed 
+        if (self.y[0]>self.windowHeight-self.blockSize):
             self.isDead=True
+        for i in range(self.size-1,0,-1):
+            if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
+                self.isDead=True
 
 
     def moveUp(self):
-        self.y = self.y - self.speed 
-        if (self.y<0):
+        for i in range(self.size-1,0,-1):
+            self.y[i] = self.y[i-1]
+            self.x[i] = self.x[i-1]
+        self.y[0] = self.y[0] - self.speed 
+        if (self.y[0]<0):
             self.isDead=True
+        for i in range(self.size-1,0,-1):
+            if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
+                self.isDead=True
 
 
 
@@ -94,7 +131,8 @@ class App:
     
     def on_render(self):
         self._display.fill((0,0,0))
-        self._display.blit(self._image,(self.player.x,self.player.y))
+        for i in range(self.player.size):
+            self._display.blit(self._image,(self.player.x[i],self.player.y[i]))
         self._display.blit(self._food,(self.apple.x,self.apple.y))
         pygame.display.update()
  
@@ -109,19 +147,27 @@ class App:
             keys = pygame.key.get_pressed() 
             
             if (keys[K_RIGHT]):
-                if(self.direction!=2):
-                    self.direction=2
+                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                    if (self.direction != 4):
+                        if(self.direction!=2):
+                            self.direction=2
                     # self.player.x+=self.blockSize - divmod(self.player.x,self.blockSize)[1]
                     # self.player.y+=self.blockSize - divmod(self.player.y,self.blockSize)[1]
 
             if (keys[K_LEFT]):
-                self.direction=4
+                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                    if(self.direction != 2 and self.direction != 0):
+                        self.direction=4
 
             if (keys[K_DOWN]):
-                self.direction=3
+                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                    if(self.direction != 1):
+                        self.direction=3
 
             if (keys[K_UP]):
-                self.direction=1
+                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                    if(self.direction != 3):
+                        self.direction=1
 
             if (keys[K_ESCAPE]):
                 self._running = False
@@ -151,9 +197,12 @@ class App:
                 time.sleep(0.125)
 
 
-            if (self.player.x == self.apple.x and self.player.y == self.apple.y):
+            if (self.player.x[0] == self.apple.x and self.player.y[0] == self.apple.y):
                 self.apple.newCoord()
                 self.player.score += 1
+                self.player.size += 1
+                self.player.x.insert(self.player.size,self.player.x[len(self.player.x)-1])
+                self.player.y.insert(self.player.size,self.player.y[len(self.player.y)-1])
             sec = divmod(time.time()-self.t,1)[0]
             min_cap = divmod(sec,60)[0]
             sec_cap = divmod(sec,60)[1]
