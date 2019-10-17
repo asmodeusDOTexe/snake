@@ -1,35 +1,58 @@
+## -*- coding: utf-8 -*-.
 import pygame
 from pygame.locals import *
 import time
+# from pygame.time import tick
 from random import randint
+
+clock = pygame.time.Clock()
 '''
 TODO:
 Меню:
     Скоростные сложности
+    редактор карт
     Локации
+    умные яблоки
+    туман войны
     Рекорды
-    Выход
 Идентифкация игрока после смерти змейки
-Видимые барьеры
 Новые картинки
 '''
-class Apple:
-    x = 0
-    y = 0
-    def newCoord(self):
-        self.x = randint(0,self.windowWidth-self.blockSize)
-        self.y = randint(0,self.windowHeight-self.blockSize)
-        if(divmod(self.x,self.blockSize)[1]>0):
-            self.x -= (divmod(self.x,self.blockSize)[1])
 
-        if(divmod(self.y,self.blockSize)[1]>0):
-            self.y -= (divmod(self.y,self.blockSize)[1])
+def text_objects(text, font):
+    textSurface = font.render(text, True, (0,0,0))
+    return textSurface, textSurface.get_rect()
+
+class Apple:
+    x = -1
+    y = -1
+    def SetWall(self,v,n):
+        self.appleX = v #[1,5,10]
+        self.appleY = n #[1,1,10]
+    def newCoord(self):
+        appleOk = False
+        while(not appleOk):
+            self.x = randint(0,self.windowWidth-self.blockSize)
+            self.y = randint(0,self.windowHeight-self.blockSize)
+            self.x = self.x // self.blockSize
+            self.y = self.y // self.blockSize   
+            self.x *= self.blockSize
+            self.y *= self.blockSize     
+            appleOk = True
+
+            for i in range(len(self.appleX)):
+                if self.appleX[i] == self.x:
+                    if self.appleY[i] == self.y:
+                        appleOk = False
+        print(self.x,self.y)
 
     def __init__(self,w,h,b):
         self.windowWidth = w
         self.windowHeight = h
         self.blockSize = b
-        self.newCoord()
+        self.appleX = []
+        self.appleY = []
+        # self.newCoord()
 
 
 class Player:
@@ -38,7 +61,7 @@ class Player:
     y = [0]
     speed = 0
     isDead = False
-    score = 0
+    score = -1
     size = 3
     def __init__(self,w,h,b):
         self.windowWidth = w
@@ -54,12 +77,14 @@ class Player:
 
 
     def moveRight(self):
-        for i in range(self.size-1,0,-1):
-            self.x[i] = self.x[i-1]
-            self.y[i] = self.y[i-1]
-        self.x[0] = self.x[0] + self.speed
-        if (self.x[0]>self.windowWidth-self.blockSize):
+        if (self.x[0] + self.speed>self.windowWidth-2*self.blockSize):
             self.isDead=True
+        else:
+            for i in range(self.size-1,0,-1):
+                self.x[i] = self.x[i-1]
+                self.y[i] = self.y[i-1]
+            self.x[0] = self.x[0] + self.speed
+        print(self.x)
         for i in range(self.size-1,0,-1):
             if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
                 self.isDead=True
@@ -67,35 +92,38 @@ class Player:
 
 
     def moveLeft(self):
-        for i in range(self.size-1,0,-1):
-            self.x[i] = self.x[i-1]
-            self.y[i] = self.y[i-1]
-        self.x[0] = self.x[0] - self.speed
-        if (self.x[0]<0):
+        if (self.x[0]-self.speed<self.blockSize):
             self.isDead=True
+        else:
+            for i in range(self.size-1,0,-1):
+                self.x[i] = self.x[i-1]
+                self.y[i] = self.y[i-1]
+            self.x[0] = self.x[0] - self.speed
         for i in range(self.size-1,0,-1):
             if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
                 self.isDead=True
 
     def moveDown(self):
-        for i in range(self.size-1,0,-1):
-            self.y[i] = self.y[i-1]
-            self.x[i] = self.x[i-1]
-        self.y[0] = self.y[0] + self.speed 
-        if (self.y[0]>self.windowHeight-self.blockSize):
+        if (self.y[0] + self.speed>self.windowHeight-2*self.blockSize):
             self.isDead=True
+        else:
+            for i in range(self.size-1,0,-1):
+                self.y[i] = self.y[i-1]
+                self.x[i] = self.x[i-1]
+            self.y[0] = self.y[0] + self.speed 
         for i in range(self.size-1,0,-1):
             if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
                 self.isDead=True
 
 
     def moveUp(self):
-        for i in range(self.size-1,0,-1):
-            self.y[i] = self.y[i-1]
-            self.x[i] = self.x[i-1]
-        self.y[0] = self.y[0] - self.speed 
-        if (self.y[0]<0):
+        if (self.y[0]-self.speed<self.blockSize):
             self.isDead=True
+        else:
+            for i in range(self.size-1,0,-1):
+                self.y[i] = self.y[i-1]
+                self.x[i] = self.x[i-1]
+            self.y[0] = self.y[0] - self.speed 
         for i in range(self.size-1,0,-1):
             if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
                 self.isDead=True
@@ -104,18 +132,25 @@ class Player:
 
 class App:
 
-    windowWidth = 816
+    windowWidth = 816 #pygame.FULLSCREEN
     windowHeight = 624
     blockSize = 16
     player = 0
     direction = 0
     apple = 0
-    gameOver = False
+    cur_screen = 0
+    pause = False
+    # player.isDead = False
+    wall_x=[]
+    wall_y=[]
+
     def __init__(self):
         self._running = True
         self._display = None
         self._image = None
         self._food = None
+        self.wall = None
+        
         self.player = Player(self.windowWidth,self.windowHeight,self.blockSize) 
         self.apple = Apple(self.windowWidth,self.windowHeight,self.blockSize)
         self.t = time.time()
@@ -128,88 +163,197 @@ class App:
         self._running = True
         self._image = pygame.image.load("snake_16.jpeg").convert()
         self._food = pygame.image.load("apple_16.jpeg").convert()
-    
+        self.wall = pygame.image.load("wall.jpeg").convert()
+        self._image_head = pygame.image.load("snake_16 (head).jpeg").convert()
+
+    def create_wall(self,x,y,x1,y1):
+        if(x==x1):#vertical
+            for i in range(y,y1,self.blockSize):
+                self.wall_x.insert(len(self.wall_x),x)
+                self.wall_y.insert(len(self.wall_y),i)
+                self._display.blit(self.wall,(x,i))
+            # pygame.display.update()
+        if(y==y1):
+            for i in range(x,x1,self.blockSize):
+                self.wall_x.insert(len(self.wall_x),i)
+                self.wall_y.insert(len(self.wall_y),y)
+                self._display.blit(self.wall,(i,y))
+
+
+
+
     def on_render(self):
         self._display.fill((0,0,0))
-        for i in range(self.player.size):
-            self._display.blit(self._image,(self.player.x[i],self.player.y[i]))
-        self._display.blit(self._food,(self.apple.x,self.apple.y))
+        if self.cur_screen == 1:
+            
+            for i in range(1,self.player.size):
+                self._display.blit(self._image,(self.player.x[i],self.player.y[i]))
+            self._display.blit(self._image_head,(self.player.x[0],self.player.y[0]))
+            # self.player.x.pop(-1)
+            # self.player.y.pop(-1)
+            self._display.blit(self._food,(self.apple.x,self.apple.y))
+            self.create_wall(0,0,0,self.windowHeight - self.blockSize + 1)
+            self.create_wall(0,0,self.windowWidth - self.blockSize + 1,0)
+            self.create_wall(self.windowWidth - self.blockSize,0,self.windowWidth - self.blockSize,self.windowHeight - self.blockSize + 1)
+            self.create_wall(0,self.windowHeight - self.blockSize,self.windowWidth - self.blockSize + 1,self.windowHeight - self.blockSize)
+        elif self.cur_screen == 0:
+            self.pause = True
+            mouse = pygame.mouse.get_pos()
+            if 612 > mouse[0] > 204 and 145 > mouse[1] > 45:
+                pygame.draw.rect(self._display, (200,200,200),(204,45,408,100))
+                # print(pygame.mouse.get_pressed())
+                if pygame.mouse.get_pressed()[0] == 1:
+                    self.cur_screen = 1
+              #      if self.player.isDead == True:
+                    self.direction = 0
+                    self.player.isDead = False
+                    self._running = True
+                    self.__init__()
+                    self.on_init()
+                    self.pause = False
+                    self.player.isDead = False
+            else:
+                pygame.draw.rect(self._display, (255,255,255),(204,45,408,100))
+            # pygame.draw.rect(self._display, (255,255,255),(204,45,408,100))
+            
+            if 612 > mouse[0] > 204 and (145 + 145) > mouse[1] > (45 + 145):
+                pygame.draw.rect(self._display, (200,200,200),(204,190,408,100))
+            else:
+                pygame.draw.rect(self._display, (255,255,255),(204,190,408,100))
+
+            if 612 > mouse[0] > 204 and (145 + 145 + 145) > mouse[1] > (45 + 145 + 145):
+                pygame.draw.rect(self._display, (200,200,200),(204,335,408,100))
+            else:
+                pygame.draw.rect(self._display, (255,255,255),(204,335,408,100))
+
+            if 612 > mouse[0] > 204 and (145 + 145 + 145 + 145) > mouse[1] > (45 + 145 + 145 + 145):
+                pygame.draw.rect(self._display, (200,200,200),(204,480,408,100))
+                if pygame.mouse.get_pressed()[0] == 1:
+                    self._running = False
+            else:
+                pygame.draw.rect(self._display, (255,255,255),(204,480,408,100))
+
+            largeText = pygame.font.Font('freesansbold.ttf',70)
+            TextSurf, TextRect = text_objects("Новая Игра", largeText)
+            TextRect.center = (408,95)
+            
+            self._display.blit(TextSurf, TextRect)
+            
+            largeText = pygame.font.Font('freesansbold.ttf',70)
+            TextSurf, TextRect = text_objects("Настройки", largeText)
+            TextRect.center = (408,240)
+
+            self._display.blit(TextSurf, TextRect)
+            
+            largeText = pygame.font.Font('freesansbold.ttf',70)
+            TextSurf, TextRect = text_objects("Рекорды", largeText)
+            TextRect.center = (408,385)
+
+            self._display.blit(TextSurf, TextRect)
+            
+            largeText = pygame.font.Font('freesansbold.ttf',70)
+            TextSurf, TextRect = text_objects("Выход", largeText)
+            TextRect.center = (408,530)
+
+            self._display.blit(TextSurf, TextRect)
+        
+        # self.create_wall(64,64,64,128)
+        # self.create_wall(128,0,128,614)
+
         pygame.display.update()
- 
+        clock.tick(10)
     def on_cleanup(self):
         pygame.quit()
  
     def on_execute(self):
         self.on_init()
- 
+        self.create_wall(0,0,0,64)
         while( self._running ):
             pygame.event.pump()
             keys = pygame.key.get_pressed() 
-            
-            if (keys[K_RIGHT]):
-                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
-                    if (self.direction != 4):
-                        if(self.direction!=2):
-                            self.direction=2
-                    # self.player.x+=self.blockSize - divmod(self.player.x,self.blockSize)[1]
-                    # self.player.y+=self.blockSize - divmod(self.player.y,self.blockSize)[1]
+            if(self.pause == False):
+                
+                
+                if (keys[K_RIGHT]):
+                    if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                        if (self.direction != 4):
+                            if(self.direction!=2):
+                                self.direction=2
+                        # self.player.x+=self.blockSize - divmod(self.player.x,self.blockSize)[1]
+                        # self.player.y+=self.blockSize - divmod(self.player.y,self.blockSize)[1]
 
-            if (keys[K_LEFT]):
-                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
-                    if(self.direction != 2 and self.direction != 0):
-                        self.direction=4
+                elif (keys[K_LEFT]):
+                    if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                        if(self.direction != 2 and self.direction != 0):
+                            self.direction=4
 
-            if (keys[K_DOWN]):
-                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
-                    if(self.direction != 1):
-                        self.direction=3
+                elif (keys[K_DOWN]):
+                    if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                        if(self.direction != 1):
+                            self.direction=3
 
-            if (keys[K_UP]):
-                if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
-                    if(self.direction != 3):
-                        self.direction=1
+                elif (keys[K_UP]):
+                    if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
+                        if(self.direction != 3):
+                            self.direction=1
 
-            if (keys[K_ESCAPE]):
-                self._running = False
+                if (keys[K_ESCAPE]):
+                    self.cur_screen = 0
 
-            if (self.gameOver!=True):
+                for j in range(len(self.wall_x)):
+                    if(self.wall_x[j] == self.player.x[0]):
+                        if(self.wall_y[j] == self.player.y[0]):
+                            # self.player.isDead = True
+                            self.player.isDead = True
 
-
-                if (self.direction>0):
-
-                    if (self.direction==1):
-                        self.player.moveUp()
-
-                    elif (self.direction==2):
-                        self.player.moveRight()
-
-                    elif (self.direction==3):
-                        self.player.moveDown()
-
-                    elif (self.direction==4):
-                        self.player.moveLeft()
-
-                if (self.player.isDead):
-                    self.direction=0
-                    print("Game Over")
-                    self.gameOver=True
-
-                time.sleep(0.125)
+                if (self.player.isDead!=True):
 
 
-            if (self.player.x[0] == self.apple.x and self.player.y[0] == self.apple.y):
-                self.apple.newCoord()
-                self.player.score += 1
-                self.player.size += 1
-                self.player.x.insert(self.player.size,self.player.x[len(self.player.x)-1])
-                self.player.y.insert(self.player.size,self.player.y[len(self.player.y)-1])
-            sec = divmod(time.time()-self.t,1)[0]
-            min_cap = divmod(sec,60)[0]
-            sec_cap = divmod(sec,60)[1]
-            if (not self.player.isDead):
-                caption = "SNAKE: " + "Съедено яблок: " \
-                + str(self.player.score) + " | " + "Время: " + str(min_cap)[:-2] + "m " + str(sec_cap)[:-2] + "s"
-                pygame.display.set_caption(caption)
+                    if (self.direction>0):
+                        self.player.size = self.player.size - 1
+
+                        if (self.direction==1):
+                            self.player.moveUp()
+
+                        elif (self.direction==2):
+                            self.player.moveRight()
+
+                        elif (self.direction==3):
+                            self.player.moveDown()
+
+                        elif (self.direction==4):
+                            self.player.moveLeft()
+                    # time.sleep(0.125)
+                    if (self.player.isDead):
+                        self.direction=0
+                        print("Game Over")
+                        self.player.isDead=True
+
+
+
+                if (self.player.x[0] == self.apple.x and self.player.y[0] == self.apple.y) or (self.apple.x == -1 and self.apple.y == -1):
+                    while(True):
+                        self.apple.newCoord()
+                        brk = True
+                        for j in range(len(self.wall_x)):
+                            if(self.wall_x[j] == self.apple.x):
+                                if(self.wall_y[j] == self.apple.y):
+                                    brk = False
+                        if(brk):
+                            break
+
+                    if (self.apple.x != -1 and self.apple.y != -1):
+                        self.player.score += 1
+                        self.player.size += 1
+                        self.player.x.insert(self.player.size,self.player.x[len(self.player.x)-1])
+                        self.player.y.insert(self.player.size,self.player.y[len(self.player.y)-1])
+                sec = divmod(time.time()-self.t,1)[0]
+                min_cap = divmod(sec,60)[0]
+                sec_cap = divmod(sec,60)[1]
+                if (not self.player.isDead) and self.cur_screen == 1:
+                    caption = "SNAKE: " + "Съедено яблок: " \
+                    + str(self.player.score) + " | " + "Время: " + str(min_cap)[:-2] + "m " + str(sec_cap)[:-2] + "s"
+                    pygame.display.set_caption(caption)
 
 
             self.on_render()
