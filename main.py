@@ -2,22 +2,10 @@
 import pygame
 from pygame.locals import *
 import time
-# from pygame.time import tick
 from random import randint
 
 clock = pygame.time.Clock()
-'''
-TODO:
-Меню:
-    Скоростные сложности
-    редактор карт
-    Локации
-    умные яблоки
-    туман войны
-    Рекорды
-Идентифкация игрока после смерти змейки
-Новые картинки
-'''
+
 
 def text_objects(text, font):
     textSurface = font.render(text, True, (0,0,0))
@@ -27,8 +15,8 @@ class Apple:
     x = -1
     y = -1
     def SetWall(self,v,n):
-        self.appleX = v #[1,5,10]
-        self.appleY = n #[1,1,10]
+        self.appleX = v
+        self.appleY = n
     def newCoord(self):
         appleOk = False
         while(not appleOk):
@@ -44,7 +32,6 @@ class Apple:
                 if self.appleX[i] == self.x:
                     if self.appleY[i] == self.y:
                         appleOk = False
-        print(self.x,self.y)
 
     def __init__(self,w,h,b):
         self.windowWidth = w
@@ -52,8 +39,6 @@ class Apple:
         self.blockSize = b
         self.appleX = []
         self.appleY = []
-        # self.newCoord()
-
 
 class Player:
 
@@ -61,7 +46,7 @@ class Player:
     y = [0]
     speed = 0
     isDead = False
-    score = -1
+    score = 0
     size = 3
     def __init__(self,w,h,b):
         self.windowWidth = w
@@ -69,7 +54,6 @@ class Player:
         self.blockSize = b
         self.x=[0]*self.size
         self.y=[0]*self.size
-        # print(x)
         for i in range(self.size): 
             self.x[i] = w/2 - b/2 -self.blockSize * i
             self.y[i] = h/2 - b/2
@@ -84,7 +68,6 @@ class Player:
                 self.x[i] = self.x[i-1]
                 self.y[i] = self.y[i-1]
             self.x[0] = self.x[0] + self.speed
-        print(self.x)
         for i in range(self.size-1,0,-1):
             if(self.x[i]==self.x[0] and self.y[i]==self.y[0]):
                 self.isDead=True
@@ -132,7 +115,7 @@ class Player:
 
 class App:
 
-    windowWidth = 816 #pygame.FULLSCREEN
+    windowWidth = 816
     windowHeight = 624
     blockSize = 16
     player = 0
@@ -140,7 +123,6 @@ class App:
     apple = 0
     cur_screen = 0
     pause = False
-    # player.isDead = False
     wall_x=[]
     wall_y=[]
 
@@ -167,12 +149,11 @@ class App:
         self._image_head = pygame.image.load("snake_16 (head).jpeg").convert()
 
     def create_wall(self,x,y,x1,y1):
-        if(x==x1):#vertical
+        if(x==x1):
             for i in range(y,y1,self.blockSize):
                 self.wall_x.insert(len(self.wall_x),x)
                 self.wall_y.insert(len(self.wall_y),i)
                 self._display.blit(self.wall,(x,i))
-            # pygame.display.update()
         if(y==y1):
             for i in range(x,x1,self.blockSize):
                 self.wall_x.insert(len(self.wall_x),i)
@@ -189,8 +170,6 @@ class App:
             for i in range(1,self.player.size):
                 self._display.blit(self._image,(self.player.x[i],self.player.y[i]))
             self._display.blit(self._image_head,(self.player.x[0],self.player.y[0]))
-            # self.player.x.pop(-1)
-            # self.player.y.pop(-1)
             self._display.blit(self._food,(self.apple.x,self.apple.y))
             self.create_wall(0,0,0,self.windowHeight - self.blockSize + 1)
             self.create_wall(0,0,self.windowWidth - self.blockSize + 1,0)
@@ -199,66 +178,58 @@ class App:
         elif self.cur_screen == 0:
             self.pause = True
             mouse = pygame.mouse.get_pos()
-            if 612 > mouse[0] > 204 and 145 > mouse[1] > 45:
-                pygame.draw.rect(self._display, (200,200,200),(204,45,408,100))
-                # print(pygame.mouse.get_pressed())
+            if 612 > mouse[0] > 204 and 290 > mouse[1] > 190:
+                pygame.draw.rect(self._display, (200,200,200),(204,190,408,100))
                 if pygame.mouse.get_pressed()[0] == 1:
                     self.cur_screen = 1
-              #      if self.player.isDead == True:
                     self.direction = 0
                     self.player.isDead = False
                     self._running = True
                     self.__init__()
-                    self.on_init()
+                    self._display = pygame.display.set_mode((self.windowWidth,self.windowHeight))
+                    
+                    pygame.display.set_caption('Snake game')
+                    self._running = True
+                    self._image = pygame.image.load("snake_16.jpeg").convert()
+                    self._food = pygame.image.load("apple_16.jpeg").convert()
+                    self.wall = pygame.image.load("wall.jpeg").convert()
+                    self._image_head = pygame.image.load("snake_16 (head).jpeg").convert()
                     self.pause = False
                     self.player.isDead = False
-            else:
-                pygame.draw.rect(self._display, (255,255,255),(204,45,408,100))
-            # pygame.draw.rect(self._display, (255,255,255),(204,45,408,100))
-            
-            if 612 > mouse[0] > 204 and (145 + 145) > mouse[1] > (45 + 145):
-                pygame.draw.rect(self._display, (200,200,200),(204,190,408,100))
+                    while(True):
+                        self.apple.newCoord()
+                        brk = True
+                        for j in range(len(self.wall_x)):
+                            if(self.wall_x[j] == self.apple.x):
+                                if(self.wall_y[j] == self.apple.y):
+                                    brk = False
+                        for i in range(len(self.player.x)):
+                            if(self.player.x[i] == self.apple.x):
+                                if(self.player.y[i] == self.apple.y):
+                                    brk = False
+                        if(brk):
+                            break
             else:
                 pygame.draw.rect(self._display, (255,255,255),(204,190,408,100))
-
             if 612 > mouse[0] > 204 and (145 + 145 + 145) > mouse[1] > (45 + 145 + 145):
                 pygame.draw.rect(self._display, (200,200,200),(204,335,408,100))
-            else:
-                pygame.draw.rect(self._display, (255,255,255),(204,335,408,100))
-
-            if 612 > mouse[0] > 204 and (145 + 145 + 145 + 145) > mouse[1] > (45 + 145 + 145 + 145):
-                pygame.draw.rect(self._display, (200,200,200),(204,480,408,100))
                 if pygame.mouse.get_pressed()[0] == 1:
                     self._running = False
             else:
-                pygame.draw.rect(self._display, (255,255,255),(204,480,408,100))
+                pygame.draw.rect(self._display, (255,255,255),(204,335,408,100))
 
             largeText = pygame.font.Font('freesansbold.ttf',70)
             TextSurf, TextRect = text_objects("Новая Игра", largeText)
-            TextRect.center = (408,95)
-            
-            self._display.blit(TextSurf, TextRect)
-            
-            largeText = pygame.font.Font('freesansbold.ttf',70)
-            TextSurf, TextRect = text_objects("Настройки", largeText)
             TextRect.center = (408,240)
-
+            
             self._display.blit(TextSurf, TextRect)
             
-            largeText = pygame.font.Font('freesansbold.ttf',70)
-            TextSurf, TextRect = text_objects("Рекорды", largeText)
-            TextRect.center = (408,385)
-
-            self._display.blit(TextSurf, TextRect)
             
             largeText = pygame.font.Font('freesansbold.ttf',70)
             TextSurf, TextRect = text_objects("Выход", largeText)
-            TextRect.center = (408,530)
+            TextRect.center = (408,385)
 
             self._display.blit(TextSurf, TextRect)
-        
-        # self.create_wall(64,64,64,128)
-        # self.create_wall(128,0,128,614)
 
         pygame.display.update()
         clock.tick(10)
@@ -279,9 +250,6 @@ class App:
                         if (self.direction != 4):
                             if(self.direction!=2):
                                 self.direction=2
-                        # self.player.x+=self.blockSize - divmod(self.player.x,self.blockSize)[1]
-                        # self.player.y+=self.blockSize - divmod(self.player.y,self.blockSize)[1]
-
                 elif (keys[K_LEFT]):
                     if (not((self.player.x[0] != self.player.x[1]) and (self.player.y[0] != self.player.y[1]))):
                         if(self.direction != 2 and self.direction != 0):
@@ -303,14 +271,12 @@ class App:
                 for j in range(len(self.wall_x)):
                     if(self.wall_x[j] == self.player.x[0]):
                         if(self.wall_y[j] == self.player.y[0]):
-                            # self.player.isDead = True
                             self.player.isDead = True
 
                 if (self.player.isDead!=True):
 
 
                     if (self.direction>0):
-                        self.player.size = self.player.size - 1
 
                         if (self.direction==1):
                             self.player.moveUp()
@@ -323,7 +289,6 @@ class App:
 
                         elif (self.direction==4):
                             self.player.moveLeft()
-                    # time.sleep(0.125)
                     if (self.player.isDead):
                         self.direction=0
                         print("Game Over")
@@ -338,6 +303,10 @@ class App:
                         for j in range(len(self.wall_x)):
                             if(self.wall_x[j] == self.apple.x):
                                 if(self.wall_y[j] == self.apple.y):
+                                    brk = False
+                        for i in range(len(self.player.x)):
+                            if(self.player.x[i] == self.apple.x):
+                                if(self.player.y[i] == self.apple.y):
                                     brk = False
                         if(brk):
                             break
